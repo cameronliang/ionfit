@@ -23,7 +23,7 @@ def helper(ion):
 		return 'C'
 	elif ion == 'ne8':
 		return 'Ne'
-	elif ion == 'n5':
+	elif ion == 'n5' or ion == 'n2' or ion == 'n3':
 		return 'N'
 	elif ion == 's2' or ion == 's3' or ion == 's4':
 		return 'Si'
@@ -36,7 +36,7 @@ def helper(ion):
 
 
 def ion_lists():
-	ions = np.array(['h1','c2','c3', 'c4',
+	ions = np.array(['h1','c2','c3', 'c4','n2',
 					 's2','s3','s4', 'o1',
 					 'o6','ne8','n5','mg2','fe2'])	
 	return ions 
@@ -93,6 +93,24 @@ def GenericModelInterp(gal_z,ion_name,model_choice):
 		path = input_path + '/' + model_choice + '/CombinedGrid/cubes/'
 		ion =  np.load(path + ion_name + '.npy') 
 		f = RegularGridInterpolator((clognH,clogNHI,clogT),ion)
+
+	elif model_choice == 'photo_thick':
+		credshift = np.arange(0,0.4,0.1)
+		clogNHI = np.arange(14,22.2,0.2)
+		clognH = np.arange(-4.2,0.2,0.2)
+		path = input_path + '/' + model_choice + '/CombinedGrid/cubes/'
+
+		#ind = int(np.where(abs(redshift-gal_z) < 0.1)[0]) # Use the closest z
+		ion = np.load(path + ion_name + '.npy')#[ind,:,:]
+		f_3D = RegularGridInterpolator((credshift,clognH,clogNHI),ion)
+
+		new_ion = np.zeros((len(clognH), len(clogNHI)))
+		for i in range(len(clognH)):
+			for j in range(len(clogNHI)):
+				new_ion[i][j] = f_3D((gal_z,clognH[i],clogNHI[j]))
+
+		f = RectBivariateSpline(clognH,clogNHI,new_ion) 
+		
 
 	return f
 
@@ -193,9 +211,19 @@ class DefineIonizationModel:
 			#print 'Assumed logT = %f' % logT  
 			logN = (self.logf_ion[ion_name](lognH,logT) - self.logf_ion['h1'](lognH,logT) + 
 					logZfrac(logZ,specie) + logNHI)
+
+		elif self.config_params.model == 'photo_thick':
+			lognH,logZ,logNHI = alpha
+			if -4.2 < lognH < 0 and 0 < logNHI <= 22:
+				if logNHI < 14:
+					# if < 14, use optically thin for all values of NHI < 14.
+					logN = (self.logf_ion[ion_name](lognH,14.0) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+				else:
+					logN = (self.logf_ion[ion_name](lognH,logNHI) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+			else:
+				logN = -np.inf
+
 		return logN
-
-
 
 if __name__ == '__main__':
 	import sys
@@ -204,7 +232,7 @@ if __name__ == '__main__':
 	config_params = DefineParams(config_fname)
 	ion_model = DefineIonizationModel(config_params)
 
-	alpha = np.array([-3,0,4.2,17])
+	alpha = np.array([-3,0,17])
 	import time 
 	t1 = time.time()
 	print ion_model.model_prediction(alpha,'c2')
@@ -216,4 +244,5 @@ if __name__ == '__main__':
 	print ion_model.model_prediction(alpha,'o1')
 	print ion_model.model_prediction(alpha,'o6')
 	print ion_model.model_prediction(alpha,'n5')
+	print ion_model.model_prediction(alpha,'n2')
 	print time.time() - t1

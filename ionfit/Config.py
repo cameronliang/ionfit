@@ -40,6 +40,7 @@ class DefineParams:
 
             elif 'ions' in line:
                 self.ion_names = line[1:] # list of ion names
+                self.nconstraints = len(self.ion_names) # includes HI
                 self.n_metal_ions = len(self.ion_names)-1
                 self.log_pdf = {}
                 for ion_name in self.ion_names:
@@ -52,7 +53,7 @@ class DefineParams:
                 self.model_redshift   = float(line[2])
                 
                 self.nparams = 4
-                if self.model == 'photo_fixed_logT_thin':
+                if self.model == 'photo_fixed_logT_thin' or self.model == 'photo_thick':
                     self.nparams = 3
 
             elif 'lognH' in line:

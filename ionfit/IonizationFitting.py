@@ -98,6 +98,11 @@ def ionfit_mcmc(config_params):
 
     config_params.print_config_params()
 
+    if config_params.nconstraints < config_params.nparams:
+        print('Number of constraints %d < number of parameters %d' % (config_params.nconstraints,config_params.nparams))
+        print('Exiting program...')
+        exit()
+
     # Set up the sampler
     sampler = kombine.Sampler(config_params.nwalkers, 
                               config_params.nparams, 
