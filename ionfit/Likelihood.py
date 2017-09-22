@@ -1,5 +1,6 @@
 """
-I can optimize the code by removing some of the if statements here. like h1 - in prior. and which prior, 4 or 3 parameters.  
+I can optimize the code by removing some of the if statements here. 
+like h1 - in prior. and which prior, 4 or 3 parameters.  
 """
 import numpy as np
 

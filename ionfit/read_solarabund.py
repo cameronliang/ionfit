@@ -1,9 +1,16 @@
 import numpy as np
 import pylab as pl
+import os
 
 
+def getCodeDir():
 
-def read_abnd(fname = './data/abnd.dat'):
+	return os.path.dirname(os.path.realpath(__file__))
+
+code_dir = getCodeDir()
+
+
+def read_abnd(fname = code_dir + '/data/abnd.dat'):
 	"""
 	Source: Asplund et al 2009, ARAA, section 3. Photosphere Abundance
 	Read Solar Abudance
@@ -26,7 +33,7 @@ def SpecieMetalFraction():
 	return the dictionary
 	"""
 
-	fname = './data/abnd.dat'
+	fname = code_dir + '/data/abnd.dat'
 	name = np.loadtxt(fname,dtype=str,usecols=[0])
 	abundance = np.loadtxt(fname,usecols=[1])
 
@@ -53,7 +60,7 @@ def MetalFraction():
 	Output: 
 	Log 10 of the ratio of the number of all metal atoms over hydrogen atoms 
 	"""
-	fname = './data/abnd.dat'
+	fname = code_dir + '/data/abnd.dat'
 	name = np.loadtxt(fname,dtype=str,usecols=[0])
 	abundance = np.loadtxt(fname,usecols=[1])
 
@@ -70,8 +77,7 @@ def NumberFraction(specie):
 	"""
 	Return log10 of N_x/N_H in the sun
 	"""
-	#fname = './data/abnd.dat'
-	fname = '/home/jwliang/projects/obs/ionization/codes/mla_analysis/data/abnd.dat'
+	fname = code_dir + '/data/abnd.dat'
 	name = np.loadtxt(fname,dtype=str,usecols=[0])
 	abundance = np.loadtxt(fname,usecols=[1])	
 	
@@ -85,17 +91,4 @@ def NumberFraction(specie):
 
 
 if __name__ == '__main__':
-	#fname ='/home/jwliang/projects/theory/los/data/met_table/solar_abundance.dat'
-	#d = read_abund(fname,opt='mass')
-	#d = read_abund(opt = 'mass')
-	#print d['Carbon']
-
-
-	#d = read_abund(opt = 'number')
-	#print np.log10(d['Carbon'])
-
-	#print MetalFraction()
-	#logf_Z = SpecieMetalFraction()	
-	#print logf_Z['O']
-
 	print NumberFraction('C')

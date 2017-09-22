@@ -39,21 +39,27 @@ def corner_plot(config_params):
 	chain = np.load(config_params.chain_fname + '.npy')
 
 
-	samples = chain[1000:, :, :].reshape((-1, config_params.nparams))
+	samples = chain[500:, :, :].reshape((-1, config_params.nparams))
 
-	if config_params.nparams == 4:
-		fig = corner.corner(samples,quantiles=[0.16, 0.5, 0.84],
-			labels=[r"$\log n_{\rm H}\,[\rm cm^{-3}]$",
-					r"$\log Z\,[\rm Z_{\odot}]$",
-					r"$\log T\,[\rm K]$", 
-					r"$\log N_{\rm HI}\,[\rm cm^{-2}]$"],
-					show_titles=True,title_kwargs={"fontsize": 15})
+	if config_params.nparams == 3 or config_params.nparams == 4:
+		#fig = corner.corner(samples)
+		fig = corner.corner(samples,quantiles=(0.16,0.5, 0.84),bins=30,smooth1d=True,
+							truths=([tlognH,tlogZ,tlogT,tlogNHI]),
+							labels=[r"$\log n_{\rm H}\,[\rm cm^{-3}]$",
+							r"$\log Z\,[\rm Z_{\odot}]$",
+							r"$\log T\,[\rm K]$",
+							r"$\log N_{\rm HI}\,[\rm cm^{-2}]$"],
+							show_titles=True,title_kwargs={"fontsize": 13})
+		#fig.suptitle("PDF")
+	"""	
 	elif config_params.nparams == 3:
 		fig = corner.corner(samples,quantiles=[0.16, 0.5, 0.84],
 			labels=[r"$\log n_{\rm H}\,[\rm cm^{-3}]$",
 					r"$\log Z\,[\rm Z_{\odot}]$",
 					r"$\log N_{\rm HI}\,[\rm cm^{-2}]$"],
 					show_titles=True,title_kwargs={"fontsize": 15})
+					"""
+	
 	output_path = config_params.input_path + '/ionfit_plots/'
 	if not os.path.isdir(output_path):
 		os.mkdir(output_path)
@@ -140,6 +146,12 @@ if __name__ == '__main__':
 
 
 	config_fname = sys.argv[1]
+	
+	tlognH  = float(sys.argv[2])
+	tlogT   = float(sys.argv[3])
+	tlogZ   = float(sys.argv[4])
+	tlogNHI = float(sys.argv[5])
+	
 	config_params = DefineParams(config_fname)
 	ion_model = DefineIonizationModel(config_params)
 	config_params.print_config_params()
