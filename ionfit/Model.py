@@ -7,7 +7,7 @@ make dictionary to convert from 'c3' to 'C', specie.
 
 import numpy as np
 from scipy.interpolate import RectBivariateSpline, interp1d,\
-							  RegularGridInterpolator
+							  RegularGridInterpolator # interpolation on regular grid in arbitrary dimension
 
 from read_solarabund import SpecieMetalFraction, MetalFraction,\
 							NumberFraction
@@ -36,7 +36,7 @@ def helper(ion):
 
 
 def ion_lists():
-	ions = np.array(['h1','c2','c3', 'c4','n2',
+	ions = np.array(['h1','c2','c3', 'c4','n2', 'n3',
 					 's2','s3','s4', 'o1',
 					 'o6','ne8','n5','mg2','fe2'])	
 	return ions 
@@ -67,7 +67,7 @@ def GenericModelInterp(gal_z,ion_name,model_choice):
 		path = input_path + '/photo_collision_thin/CombinedGrid/cubes/'
 		ind = int(np.where(abs(redshift-gal_z) < 0.1)[0]) # Use the closest z
 		ion = np.load(path + ion_name + '.npy')[ind,:,:]
-		
+
 		# Interpolate the function
 		f = np.vectorize(RectBivariateSpline(clognH,clogT,ion))
 
@@ -109,7 +109,25 @@ def GenericModelInterp(gal_z,ion_name,model_choice):
 				new_ion[i][j] = f_3D((gal_z,clognH[i],clogNHI[j]))
 
 		f = RectBivariateSpline(clognH,clogNHI,new_ion) 
-		
+
+
+	elif model_choice == 'photo_thick_aUV':
+		credshift = np.arange(0,0.4,0.1)  
+		caUV       = np.arange(-3,2.0,0.5) # c before aUV just means cloudy grid values.
+		clogNHI   = np.arange(14,22,0.3)
+		clognH    = np.linspace(-4.4,0.,12)
+		path = input_path + '/' + model_choice + '/grids/CombinedGrid/cubes/'
+
+		ion = np.load(path + ion_name + '.npy') # 4D array
+		f_4D = RegularGridInterpolator((credshift,caUV,clognH,clogNHI),ion)
+
+		new_ion = np.zeros(( len(caUV), len(clognH), len(clogNHI) ))
+		for i in range(len(caUV)):
+			for j in range(len(clognH)):
+				for k in range(len(clogNHI)):
+					new_ion[i][j][k] = f_4D((gal_z,caUV[i],clognH[j],clogNHI[k]))
+
+		f = RegularGridInterpolator((caUV,clognH,clogNHI),new_ion)
 
 	return f
 
@@ -217,11 +235,33 @@ class DefineIonizationModel:
 			if -4.2 < lognH < 0 and 0 < logNHI <= 22:
 				if logNHI < 14:
 					# if < 14, use optically thin for all values of NHI < 14.
-					logN = (self.logf_ion[ion_name](lognH,14.0) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+					logN = (self.logf_ion[ion_name](lognH,14.0) - 
+							self.logf_ion['h1'](lognH,logNHI) 	+ 
+							logZfrac(logZ,specie) + logNHI)[0][0]
 				else:
-					logN = (self.logf_ion[ion_name](lognH,logNHI) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+					logN = (self.logf_ion[ion_name](lognH,logNHI) - 
+							self.logf_ion['h1'](lognH,logNHI) + 
+							logZfrac(logZ,specie) + logNHI)[0][0]
 			else:
 				logN = -np.inf
+
+		elif self.model == 'photo_thick_aUV':
+			lognH,logZ,aUV,logNHI = alpha
+			if -4.2 <= lognH < 0 and -3 <= aUV < 2 and 0 < logNHI <= 22:
+				if logNHI <= 14:
+
+					# if < 14, use optically thin for all values of NHI < 14.
+					logN = (self.logf_ion[ion_name]((aUV,lognH,14.0)) - 
+							self.logf_ion['h1']((aUV,lognH,14.0))     + 
+							logZfrac(logZ,specie) + logNHI)
+					
+				else:
+					logN = (self.logf_ion[ion_name]((aUV,lognH,logNHI)) - 
+							self.logf_ion['h1']((aUV,lognH,logNHI)) 
+							+ logZfrac(logZ,specie) + logNHI)
+			else:
+				logN = -np.inf
+
 
 		return logN
 
@@ -251,13 +291,7 @@ class DefineIonizationModel_test:
 						+ logZfrac(logZ,specie)
 						- self.logf_ion['h1'](lognH,logT)
 						+ logNHI)[0][0]
-				#print '\n'
-				#print 'ionization fraction:', self.logf_ion[ion_name](lognH,logT)
-				#print '-HI fraction: ', -self.logf_ion['h1'](lognH,logT)
-				#print 'Z fraction: ', logZfrac(logZ,specie)
-				#print 'logNHI: ',logNHI
-				#print 'log NH: ', logNHI-self.logf_ion['h1'](lognH,logT)
-				#print 'sum = '
+
 			else:
 				logN = -np.inf
 
@@ -306,11 +340,34 @@ class DefineIonizationModel_test:
 			if -4.2 < lognH < 0 and 0 < logNHI <= 22:
 				if logNHI < 14:
 					# if < 14, use optically thin for all values of NHI < 14.
-					logN = (self.logf_ion[ion_name](lognH,14.0) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+					logN = (self.logf_ion[ion_name](lognH,14.0) - 
+							self.logf_ion['h1'](lognH,14.0)     + 
+							logZfrac(logZ,specie) + logNHI)[0][0]
 				else:
-					logN = (self.logf_ion[ion_name](lognH,logNHI) - self.logf_ion['h1'](lognH,logNHI) + logZfrac(logZ,specie) + logNHI)[0][0]
+					logN = (self.logf_ion[ion_name](lognH,logNHI) - 
+							self.logf_ion['h1'](lognH,logNHI) + 
+							logZfrac(logZ,specie) + logNHI)[0][0]
 			else:
 				logN = -np.inf
+
+
+		elif self.model == 'photo_thick_aUV':
+			lognH,logZ,aUV,logNHI = alpha
+			if -4.2 <= lognH < 0 and -3 <= aUV < 2 and 0 < logNHI <= 22:
+				if logNHI <= 14:
+
+					# if < 14, use optically thin for all values of NHI < 14.
+					logN = (self.logf_ion[ion_name]((aUV,lognH,14.0)) - 
+							self.logf_ion['h1']((aUV,lognH,14.0))     + 
+							logZfrac(logZ,specie) + logNHI)
+					
+				else:
+					logN = (self.logf_ion[ion_name]((aUV,lognH,logNHI)) - 
+							self.logf_ion['h1']((aUV,lognH,logNHI)) 
+							+ logZfrac(logZ,specie) + logNHI)
+			else:
+				logN = -np.inf
+
 
 		return logN
 
@@ -322,10 +379,18 @@ if __name__ == '__main__':
 	#config_fname = sys.argv[1]
 	#config_params = DefineParams(config_fname)
 	#ion_model = DefineIonizationModel(config_params)
+	#model = 'photo_thick_aUV'
 	model = 'photo_collision_thin'
 	ion_model = DefineIonizationModel_test(model,0.0)
 
-	#alpha = np.array([-3.665390,0.710639,5.529609,12.9243255637])
+	lognH  = -2.665390
+	logZ = 1.710639
+	aUV = -2.12
+	logN = 15.0
+
+	logT = 4.2
+	#alpha = np.array([lognH,logZ,aUV,logN])
+	alpha = np.array([lognH,logZ,logT,logN])
 	
 	import time 
 	t1 = time.time()
