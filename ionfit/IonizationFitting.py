@@ -24,14 +24,25 @@ def photo_model_lnprior(alpha,config):
 	return total_prior
 
 
+def photo_model_aUV_lnprior(alpha,config):
+	lognH,logZ,aUV,logNHI= alpha
+
+	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
+				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+                  tophat_prior(aUV,config.min_aUV,  config.max_aUV)      +
+				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
+				  config.log_pdf['h1'](logNHI)) 	
+	return total_prior
+
+
 def photo_collision_model_lnprior(alpha,config):
 	lognH,logZ,logT,logNHI = alpha
 
 	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
 				  tophat_prior(logT,config.min_logT,  config.max_logT)      +
 				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
-				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
-				  config.log_pdf['h1'](logNHI))
+                  config.log_pdf['h1'](logNHI) + 
+				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI))
 
 	return total_prior
 
@@ -59,12 +70,13 @@ def lnprior(alpha):
     """
     Natural Log of the priors   
     """
-    if config_params.nparams == 4:            
-        return photo_collision_model_lnprior(alpha,config_params)
-    elif config_params.nparams == 3:
-            return photo_model_lnprior(alpha,config_params)
-    else:
-        print('No models with %d parameters' % config_params.nparams)
+    return photo_collision_model_lnprior(alpha,config_params)
+    #if config_params.nparams == 4:            
+    #    return photo_collision_model_lnprior(alpha,config_params)
+    #elif config_params.nparams == 3:
+    #        return photo_model_lnprior(alpha,config_params)
+    #else:
+    #    print('No models with %d parameters' % config_params.nparams)
 
 
 def lnprob(alpha):
@@ -90,6 +102,7 @@ def _initialize_walkers(config_params):
         p0[i] = np.random.uniform(config_params.priors[i][0],
                                 config_params.priors[i][1],
                                 size=config_params.nwalkers)
+    
     return np.transpose(p0)
 
 def ionfit_mcmc(config_params):
@@ -124,6 +137,7 @@ if __name__ == '__main__':
 
     config_fname = sys.argv[1]
     config_params = DefineParams(config_fname)
-    ion_model = DefineIonizationModel(config_params) 
+    ion_model = DefineIonizationModel(config_params)
     ionfit_mcmc(config_params)
-    
+
+

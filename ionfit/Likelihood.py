@@ -24,6 +24,15 @@ def photo_model_lnprior(alpha,config):
 				  obs_data.log_pdf['h1'](logNHI)) 	
 	return total_prior
 
+def photo_model_aUV_lnprior(alpha,config):
+	lognH,logZ,aUV,logNHI= alpha
+
+	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
+				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+                  tophat_prior(aUV,config.min_aUV,  config.max_aUV)      +
+				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
+				  config.log_pdf['h1'](logNHI)) 	
+	return total_prior
 
 def photo_collision_model_lnprior(alpha,config):
 	lognH,logZ,logT,logNHI = alpha
@@ -78,7 +87,8 @@ class Posterior(object):
         """
         Natural Log of the priors   
         """
-        if config.nparams == 4:            
+        if config.nparams == 4:         
+            #return photo_model_aUV_lnprior(alpha,config)
 	        return photo_collision_model_lnprior(alpha,config)
         elif config.nparams == 3:
              return photo_model_lnprior(alpha,config)
@@ -96,7 +106,6 @@ class Posterior(object):
             Natural log of posterior probability
         """
         lp = self.lnprior(alpha)
-        
         if np.isinf(lp):
             return -np.inf
         else:

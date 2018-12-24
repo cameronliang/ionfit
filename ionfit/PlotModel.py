@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as plt
 import corner
 import sys,os
 from Config import DefineParams
@@ -8,7 +8,7 @@ from Model import DefineIonizationModel
 def write_mcmc_stats(config_params_obj,output_fname):
 	chain = np.load(config_params_obj.chain_fname + '.npy')
 	#burnin = compute_burin_GR(config_params_obj.chain_fname + '_GR.dat')
-	burnin = 1000
+	burnin = 200
 
 	f = open(output_fname,'w')
 	f.write('x_med\tx_mean\tx_std\tx_cfl11\tx_cfl12\t x_cfl21\tx_cfl22\n')
@@ -39,40 +39,57 @@ def corner_plot(config_params):
 	chain = np.load(config_params.chain_fname + '.npy')
 
 
-	samples = chain[500:, :, :].reshape((-1, config_params.nparams))
 
-	if config_params.nparams == 3 or config_params.nparams == 4:
+	samples = np.array(chain[200:, :, :].reshape((-1, config_params.nparams)))
+
+	#self.burned_in_samples = mcmc_chain[self.burnin:, :, :].reshape((-1, self.config_param.n_params))
+
+
+#self.burned_in_samples = mcmc_chain[self.burnin:, :, :].reshape((-1, self.config_param.n_params))
+
+	if config_params.nparams == 3:# or config_params.nparams == 4:
 		#fig = corner.corner(samples)
-		fig = corner.corner(samples,quantiles=(0.16,0.5, 0.84),bins=30,smooth1d=True,
-							truths=([tlognH,tlogZ,tlogT,tlogNHI]),
+		fig = corner.corner(samples,quantiles=(0.16,0.5, 0.84),bins=20,smooth1d=True,
+							#truths=([tlognH,tlogZ,tlogT,tlogNHI]),
 							labels=[r"$\log n_{\rm H}\,[\rm cm^{-3}]$",
 							r"$\log Z\,[\rm Z_{\odot}]$",
 							r"$\log T\,[\rm K]$",
 							r"$\log N_{\rm HI}\,[\rm cm^{-2}]$"],
 							show_titles=True,title_kwargs={"fontsize": 13})
 		#fig.suptitle("PDF")
-	"""	
-	elif config_params.nparams == 3:
-		fig = corner.corner(samples,quantiles=[0.16, 0.5, 0.84],
-			labels=[r"$\log n_{\rm H}\,[\rm cm^{-3}]$",
-					r"$\log Z\,[\rm Z_{\odot}]$",
-					r"$\log N_{\rm HI}\,[\rm cm^{-2}]$"],
-					show_titles=True,title_kwargs={"fontsize": 15})
-					"""
 	
+	elif config_params.nparams == 4:
+
+
+		fig = corner.corner(samples,quantiles=(0.16,0.5, 0.84),bins=30,smooth1d=True)#,
+		#print samples[:,0]
+		#new_samples = np.transpose(samples)
+		#a = np.array(new_samples[0])
+		#print len(new_samples[0])
+		#exit()
+		#plt.hist(a)
+		#print np.shape(samples)
+		#print 'hello'
+		#print np.shape(samples)
+		#fig = corner.corner(samples)
+		#,quantiles=[0.16, 0.5, 0.84],
+		#			show_titles=True,title_kwargs={"fontsize": 15})
+		print 'aaaaaaa'
+
 	output_path = config_params.input_path + '/ionfit_plots/'
 	if not os.path.isdir(output_path):
 		os.mkdir(output_path)
 	
-	fname = output_path + config_params.chain_short_fname + '.png'
-	pl.savefig(fname, bbox_inches='tight')
-	pl.clf()
+	#fname = output_path + config_params.chain_short_fname + '.png'
+	fname = '/project/surph/jwliang/projects/spec/mock_obs/final_set_los/abs11/snr20/bvp_output_z0.000000/data_products/ascii/ionfit_plots/temp.png'
+	plt.savefig(fname, bbox_inches='tight')
+	plt.clf()
 	#print(fname)
 
 
 def comparison_plot(config_params):
 	logN_index = 0 # assume the first variable is logN, not b, or z. 
-	burnin     = 1000 # assume burnin of 1000 steps for the BVPFIT
+	burnin     = 200 # assume burnin of 1000 steps for the BVPFIT
 
 	median_logNs = np.zeros(len(config_params.ion_names))
 	logN21s      = np.zeros(len(config_params.ion_names))
@@ -81,7 +98,7 @@ def comparison_plot(config_params):
 	model_logNs21 = np.zeros(len(config_params.ion_names))
 	model_logNs22 = np.zeros(len(config_params.ion_names))
 	chain = np.load(config_params.chain_fname + '.npy')
-	samples = chain[1000:, :, :].reshape((-1, config_params.nparams))
+	samples = chain[burnin:, :, :].reshape((-1, config_params.nparams))
 
 	#print np.shape(samples)
 	bestfit_params = np.median(samples,0)
@@ -89,7 +106,8 @@ def comparison_plot(config_params):
 	bestfit_params22 = np.percentile(samples,97.5,axis=0)
 
 	# path to logN vpfit chains
-	vp_path = config_params.input_path[:-9] 
+	vp_path = config_params.input_path[:-20] + '/chains/'
+
 	for i, ion in enumerate(config_params.ion_names):
 
 		chain = np.load(vp_path + ion + '.npy')
@@ -107,28 +125,28 @@ def comparison_plot(config_params):
 
 
 	x = np.arange(len(config_params.ion_names))
-	pl.plot(x, median_logNs,'bo',ms=12)
-	pl.errorbar(x,median_logNs, yerr = [median_logNs-logN21s,		
+	plt.plot(x, median_logNs,'bo',ms=12)
+	plt.errorbar(x,median_logNs, yerr = [median_logNs-logN21s,		
 				logN22s-median_logNs],linestyle='-',color  ='b', 
 				ecolor='b',linewidth=1.5,capthick=1.5,label='Data')
-	pl.plot(x, model_logNs,'gs',ms=10,alpha = 0.5)
-	pl.errorbar(x,model_logNs, yerr = [model_logNs-model_logNs21,		
+	plt.plot(x, model_logNs,'gs',ms=10,alpha = 0.5)
+	plt.errorbar(x,model_logNs, yerr = [model_logNs-model_logNs21,		
 				model_logNs22-model_logNs],linestyle='-',color  ='g', 
 				ecolor='g',linewidth=1.5,capthick=1.5,label='Model')
-	pl.legend(loc='best')
-	pl.xlim([min(x) - 1,max(x)+1])
+	plt.legend(loc='best')
+	plt.xlim([min(x) - 1,max(x)+1])
 	min_y = min(min(model_logNs),min(logN21s))
 	max_y = max(max(model_logNs),max(logN22s))
-	pl.ylim([min_y-0.3,max_y+0.3])
-	pl.xticks(x,config_params.ion_names)
+	plt.ylim([min_y-0.3,max_y+0.3])
+	plt.xticks(x,config_params.ion_names)
 
 	output_path = config_params.input_path + '/ionfit_plots/'
 	if not os.path.isdir(output_path):
 		os.mkdir(output_path)
 
 	fname = output_path + config_params.chain_short_fname + '_modelcomp.png'
-	pl.savefig(fname, bbox_inches='tight')
-	pl.clf()
+	plt.savefig(fname, bbox_inches='tight')
+	plt.clf()
 	print(fname)
 	print('\n')
 
@@ -142,19 +160,48 @@ def write_model_summary(config_params):
 	output_summary_fname = output_path +  '/' + config_params.chain_short_fname + '.dat'
 	write_mcmc_stats(config_params,output_summary_fname)
 
+
+
+
+
+
+
+
+
+
+def corner_plot2(chain_fname):
+	#burnin = 200
+	chain = np.load(chain_fname)
+
+
+	samples = np.array(chain[:, :, :].reshape((-1, 4)))
+
+	fig = corner.corner(samples,quantiles=(0.16,0.5, 0.84),smooth1d=True)
+
+	fname = '/project/surph/jwliang/projects/spec/mock_obs/final_set_los/abs11/snr20/bvp_output_z0.000000/data_products/ascii/ionfit_plots/temp2.png'
+	plt.savefig(fname, bbox_inches='tight')
+	plt.clf()
+	#print(fname)
+
+
 if __name__ == '__main__':
 
 
-	config_fname = sys.argv[1]
+	#config_fname = sys.argv[1]
 	
-	tlognH  = float(sys.argv[2])
-	tlogT   = float(sys.argv[3])
-	tlogZ   = float(sys.argv[4])
-	tlogNHI = float(sys.argv[5])
+	#tlognH  = float(sys.argv[2])
+	#tlogT   = float(sys.argv[3])
+	#tlogZ   = float(sys.argv[4])
+	#tlogNHI = float(sys.argv[5])
 	
+	config_fname = '/project/surph/jwliang/projects/spec/mock_obs/final_set_los/abs11/snr20/bvp_output_z0.000000/ionfit_config.dat'
 	config_params = DefineParams(config_fname)
 	ion_model = DefineIonizationModel(config_params)
 	config_params.print_config_params()
 	corner_plot(config_params)
 	comparison_plot(config_params)
 	write_model_summary(config_params)
+	
+	#chain_fname ='/project/surph/jwliang/projects/spec/mock_obs/final_set_los/abs11/snr20/bvp_output_z0.000000/data_products/ascii/ionization_fit/mock_z00.0.npy'
+	#chain_fname = '/project/surph/jwliang/projects/spec/mock_obs/final_set_los/abs11/snr20/bvp_output_z0.000000/chains/c2.npy'
+	#corner_plot2(chain_fname)

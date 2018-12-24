@@ -44,6 +44,7 @@ class DefineParams:
                 self.n_metal_ions = len(self.ion_names)-1
                 self.log_pdf = {}
                 for ion_name in self.ion_names:
+                    #full_path_to_pdf = self.input_path+'/pdf_logN_1_'+ion_name+ '.dat'
                     full_path_to_pdf = self.input_path+'/logN_'+ion_name+ '.dat'
                     logN, log_pdf = np.loadtxt(full_path_to_pdf,unpack=True)
                     f = interp1d(logN,log_pdf,kind='linear',bounds_error= False,fill_value=-np.inf)
@@ -65,6 +66,11 @@ class DefineParams:
             elif 'logT' in line:
                 self.min_logT,self.max_logT    = float(line[1]),float(line[2])
                 self.priors.append([float(line[1]),float(line[2])])
+
+            #elif 'aUV' in line:
+            #    self.min_aUV,self.max_aUV    = float(line[1]),float(line[2])
+            #    self.priors.append([float(line[1]),float(line[2])])
+
             elif 'logNHI' in line:
                 self.min_logNHI,self.max_logNHI = float(line[1]),float(line[2])
                 self.priors.append([float(line[1]),float(line[2])])

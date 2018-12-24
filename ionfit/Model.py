@@ -60,7 +60,6 @@ def GenericModelInterp(gal_z,ion_name,model_choice):
 
 	input_path = '/project/surph/jwliang/projects/codes/cloudy_models'
 	if model_choice == 'photo_collision_thin' or model_choice == 'photo_fix_logT_thin':
-	
 		# load the CLOUDY input parameters
 		clognH,clogT,redshift = Cloudy_InputParamers_redshift()
 		# Load the ionization fraction grid
@@ -112,7 +111,7 @@ def GenericModelInterp(gal_z,ion_name,model_choice):
 
 
 	elif model_choice == 'photo_thick_aUV':
-		credshift = np.arange(0,0.4,0.1)  
+		credshift = np.arange(0,0.4,0.1)
 		caUV       = np.arange(-3,2.0,0.5) # c before aUV just means cloudy grid values.
 		clogNHI   = np.arange(14,22,0.3)
 		clognH    = np.linspace(-4.4,0.,12)
@@ -152,7 +151,7 @@ def ComputeGammaRatio(lognH):
 	ratio = Gamma/Gamma_UVB; 
 	eqn 14. from Rahmati 2013.
 	"""
-	nH_ssh = 5.1*1e-4; # value taken from table 2 Rahmati+ 2013
+	nH_ssh = 5.1*1e-4 # value taken from table 2 Rahmati+ 2013
 	
 	nH = 10**lognH
 	ratio = 0.98*(1+(nH/nH_ssh)**1.64)**-2.28 + 0.02*(1+nH/nH_ssh)**-0.84
@@ -186,7 +185,15 @@ class DefineIonizationModel:
 		if self.config_params.model == 'photo_collision_thin':
 			lognH,logZ,logT,logNHI = alpha
 			if -6 < lognH < 0 and 10 < logNHI <= 22 and 3.8 <= logT < 7:
-				logN = (self.logf_ion[ion_name](lognH,logT) - self.logf_ion['h1'](lognH,logT) + logZfrac(logZ,specie) + logNHI)[0][0]
+				if ion_name == 'h1':
+					logN = (self.logf_ion[ion_name](lognH,logT) - 
+							self.logf_ion['h1'](lognH,logT) + 
+							logZfrac(logZ,specie) + logNHI)[0][0]
+				else:
+					logN = (self.logf_ion[ion_name](lognH,logT) - 
+							self.logf_ion['h1'](lognH,logT) + 
+							logNHI)[0][0]
+			
 			else:
 				logN = -np.inf
 			
@@ -219,10 +226,9 @@ class DefineIonizationModel:
 					ifrac_alpha = np.array([lognH,logNHI,logT])
 					logN = np.atleast_1d(self.logf_ion[ion_name](ifrac_alpha) - self.logf_ion['h1'](ifrac_alpha) + 
 							logZfrac(logZ,specie) + logNHI)[0]
-					
 			else:
 				logN = -np.inf
-		
+
 		elif self.config_params.model == 'photo_fix_logT_thin':
 			lognH,logZ,logNHI = alpha
 			logT = 4.0 # one can fix this to whatever tempature
@@ -245,7 +251,8 @@ class DefineIonizationModel:
 			else:
 				logN = -np.inf
 
-		elif self.model == 'photo_thick_aUV':
+		elif self.config_params.model == 'photo_thick_aUV':
+
 			lognH,logZ,aUV,logNHI = alpha
 			if -4.2 <= lognH < 0 and -3 <= aUV < 2 and 0 < logNHI <= 22:
 				if logNHI <= 14:
@@ -257,8 +264,7 @@ class DefineIonizationModel:
 					
 				else:
 					logN = (self.logf_ion[ion_name]((aUV,lognH,logNHI)) - 
-							self.logf_ion['h1']((aUV,lognH,logNHI)) 
-							+ logZfrac(logZ,specie) + logNHI)
+							self.logf_ion['h1']((aUV,lognH,logNHI)) + logZfrac(logZ,specie) + logNHI)
 			else:
 				logN = -np.inf
 
@@ -277,6 +283,18 @@ class DefineIonizationModel_test:
 		self.model = model
 		self.logf_ion = GetAllIonFunctions(model_redshift,model) 
 
+	def produce_ion_logn(self,alpha,ion_name):
+		#if self.model == 'photo_collision_thin': # for this model ony.. for now
+		lognH,logZ,logT = alpha
+		specie = helper(ion_name)
+		if ion_name =='h1':
+			logn_ion = self.logf_ion[ion_name](lognH,logT) + lognH
+		else:
+			logn_ion = self.logf_ion[ion_name](lognH,logT) + \
+						logZfrac(logZ,specie) + lognH
+
+		return logn_ion[0][0]
+
 	def model_prediction(self,alpha,ion_name):
 		"""
 		Calculate column density given a specific ion, and the model
@@ -287,10 +305,16 @@ class DefineIonizationModel_test:
 		if self.model == 'photo_collision_thin':
 			lognH,logZ,logT,logNHI = alpha
 			if -6 < lognH < 0 and 10 < logNHI <= 22 and 3.8 <= logT < 7:
-				logN = (self.logf_ion[ion_name](lognH,logT)
-						+ logZfrac(logZ,specie)
-						- self.logf_ion['h1'](lognH,logT)
-						+ logNHI)[0][0]
+				if ion_name == 'h1':
+					logN = (self.logf_ion[ion_name](lognH,logT)
+							- self.logf_ion['h1'](lognH,logT)
+							+ logNHI)[0][0]
+				else:
+
+					logN = (self.logf_ion[ion_name](lognH,logT)
+							+ logZfrac(logZ,specie)
+							- self.logf_ion['h1'](lognH,logT)
+							+ logNHI)[0][0]
 
 			else:
 				logN = -np.inf
@@ -368,29 +392,26 @@ class DefineIonizationModel_test:
 			else:
 				logN = -np.inf
 
-
 		return logN
-
-
 
 if __name__ == '__main__':
 	import sys
-	#from Config import DefineParams
-	#config_fname = sys.argv[1]
-	#config_params = DefineParams(config_fname)
+	from Config import DefineParams
+	config_fname = sys.argv[1]
+	config_params = DefineParams(config_fname)
 	#ion_model = DefineIonizationModel(config_params)
 	#model = 'photo_thick_aUV'
-	model = 'photo_collision_thin'
-	ion_model = DefineIonizationModel_test(model,0.0)
+	#model = 'photo_collision_thin
+	ion_model = DefineIonizationModel(config_params)
 
-	lognH  = -2.665390
+	lognH  = -2.45369564
 	logZ = 1.710639
-	aUV = -2.12
+	aUV = 0.36763653
 	logN = 15.0
 
 	logT = 4.2
-	#alpha = np.array([lognH,logZ,aUV,logN])
-	alpha = np.array([lognH,logZ,logT,logN])
+	alpha = np.array([lognH,logZ,aUV,logN])
+	#alpha = np.array([lognH,logZ,logT,logN])
 	
 	import time 
 	t1 = time.time()
