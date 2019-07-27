@@ -1,13 +1,12 @@
 """
-This is the cleaned up version of the code Utilities.py
-it works - but has not been tested for bugs.
-
-make dictionary to convert from 'c3' to 'C', specie.
+Ionization Modeling for MCMC setup.  This also contains stand-alone model
+prediction.
 """
 
 import numpy as np
 # interpolation on regular grid in arbitrary dimension
-from scipy.interpolate import RectBivariateSpline, interp1d, RegularGridInterpolator
+from scipy.interpolate import RectBivariateSpline, interp1d
+from scipy.interpolate import RegularGridInterpolator
 from read_solarabund import SpecieMetalFraction, MetalFraction, NumberFraction
 
 ################################################################################
@@ -36,8 +35,8 @@ def helper(ion):
 
 def ion_lists():
     ions = np.array(['h1', 'c2', 'c3', 'c4', 'n2', 'n3',
-             's2', 's3', 's4', 'o1',
-             'o6', 'ne8', 'n5', 'mg2', 'fe2'])
+                     's2', 's3', 's4', 'o1',
+                     'o6', 'ne8', 'n5', 'mg2', 'fe2'])
     return ions
 
 
@@ -276,12 +275,13 @@ class DefineIonizationModel_test:
     """
     A Ionization model class
     """
-    def __init__(self,model,model_redshift):
+    def __init__(self, model, model_redshift):
         self.model = model
-        self.logf_ion = GetAllIonFunctions(model_redshift,model)
+        self.logf_ion = GetAllIonFunctions(model_redshift, model)
+
     def produce_ion_logn(self, alpha, ion_name):
         if self.model == 'photo_collision_thin':
-        # for this model ony.. for now
+            # for this model ony.. for now
             lognH, logZ, logT = alpha
             specie = helper(ion_name)
             if ion_name == 'h1':
@@ -290,130 +290,132 @@ class DefineIonizationModel_test:
                 logn_ion = self.logf_ion[ion_name](lognH, logT) + \
                             logZfrac(logZ, specie) + lognH
         return logn_ion[0][0]
-    def model_prediction(self,alpha,ion_name):
+
+    def model_prediction(self, alpha, ion_name):
         """
         Calculate column density given a specific ion, and the model
         parameters in a photo-ionization model
         """
         specie = helper(ion_name)
         if self.model == 'photo_collision_thin':
-            lognH,logZ,logT,logNHI = alpha
+            lognH, logZ, logT, logNHI = alpha
             if -6 < lognH < 0 and 10 < logNHI <= 22 and 3.8 <= logT < 7:
                 if ion_name == 'h1':
-                    logN = (self.logf_ion[ion_name](lognH,logT)
-                            - self.logf_ion['h1'](lognH,logT)
-                            + logNHI)[0][0]
+                    logN = logNHI
                 else:
-                    logN = (self.logf_ion[ion_name](lognH,logT)
-                            + logZfrac(logZ,specie)
-                            - self.logf_ion['h1'](lognH,logT)
-                            + logNHI)[0][0]
+                    logN = (self.logf_ion[ion_name](lognH, logT) +
+                            logZfrac(logZ, specie) -
+                            self.logf_ion['h1'](lognH, logT) +
+                            logNHI)[0][0]
             else:
                 logN = -np.inf
         elif self.model == 'photo_collision_noUVB':
-            lognH,logZ,logT,logNHI = alpha
-            logN = (self.logf_ion[ion_name](lognH,logT) -
-                    self.logf_ion['h1'](lognH,logT) +
-                    logZfrac(logZ,specie) + logNHI)[0][0]
-        
+            lognH, logZ, logT, logNHI = alpha
+            logN = (self.logf_ion[ion_name](lognH, logT) -
+                    self.logf_ion['h1'](lognH, logT) +
+                    logZfrac(logZ, specie) + logNHI)[0][0]
+
         elif self.model == 'photo_collision_rahmati':
-            lognH,logZ,logT,logNHI = alpha
-            if lognH < -6: 
-                lognH = -6.0 # this is because the models were not run below -6. 
+            lognH, logZ, logT, logNHI = alpha
+            if lognH < -6.0:
+                lognH = -6.0  # this is because the models were not run below -6
             elif lognH > 0:
                 lognH = 0.
 
-            gamma_ratio = ComputeGammaRatio(lognH)
-            logN = (self.logf_ion[ion_name]((lognH,logT,gamma_ratio)) -
-                    self.logf_ion['h1']((lognH,logT,gamma_ratio)) +
-                    logZfrac(logZ,specie) + logNHI)[0][0]
+            if ion_name == 'h1':
+                logN = logNHI
+            else:
+                gamma_ratio = ComputeGammaRatio(lognH)
+                logN = (self.logf_ion[ion_name]((lognH, logT, gamma_ratio)) -
+                        self.logf_ion['h1']((lognH, logT, gamma_ratio)) +
+                        logZfrac(logZ, specie) + logNHI)[0][0]
 
-        elif self.model == 'photo_collision_thick': 
-            lognH, logZ,logT,logNHI = alpha
-            # ranges to protect out of range in interpolated function. 
-            if -6. < lognH <= 0. and 10. < logNHI <= 19. and 3.8 <= logT <6.:
+        elif self.model == 'photo_collision_thick':
+            lognH, logZ, logT, logNHI = alpha
+            # ranges to protect out of range in interpolated function
+            if -6. < lognH <= 0. and 10. < logNHI <= 19. and 3.8 <= logT < 6.:
                 if logNHI <= 15:
                     ifrac_alpha = np.array([lognH, 15.0, logT])
                     logN = (self.logf_ion[ion_name](ifrac_alpha) -
                             self.logf_ion['h1'](ifrac_alpha) +
-                            logZfrac(logZ,specie) + logNHI)[0]
+                            logZfrac(logZ, specie) + logNHI)[0]
                 else:
-                    ifrac_alpha = np.array([lognH,logNHI,logT])
+                    ifrac_alpha = np.array([lognH, logNHI, logT])
                     logN = np.atleast_1d(self.logf_ion[ion_name](ifrac_alpha) -
                                          self.logf_ion['h1'](ifrac_alpha) +
-                                         logZfrac(logZ,specie) + logNHI)[0]
+                                         logZfrac(logZ, specie) + logNHI)[0]
             else:
                 logN = -np.inf
         elif self.model == 'photo_fix_logT_thin':
-            lognH,logZ,logNHI = alpha
-            logT = 4.0 # one can fix this to whatever tempature
-            logN = (self.logf_ion[ion_name](lognH,logT) - self.logf_ion['h1'](lognH,logT) + 
-                    logZfrac(logZ,specie) + logNHI)
+            lognH, logZ, logNHI = alpha
+            logT = 4.0  # one can fix this to whatever tempature
+            logN = (self.logf_ion[ion_name](lognH, logT) -
+                    self.logf_ion['h1'](lognH, logT) +
+                    logZfrac(logZ, specie) + logNHI)
 
         elif self.model == 'photo_thick':
-            lognH,logZ,logNHI = alpha
+            lognH, logZ, logNHI = alpha
             if -4.2 < lognH < 0 and 0 < logNHI <= 22:
-                if logNHI < 14:
-                    # if < 14, use optically thin for all values of NHI < 14.
-                    logN = (self.logf_ion[ion_name](lognH,14.0) - 
-                            self.logf_ion['h1'](lognH,14.0)     + 
-                            logZfrac(logZ,specie) + logNHI)[0][0]
+                if ion_name == 'h1':
+                    logN = logNHI
                 else:
-                    logN = (self.logf_ion[ion_name](lognH,logNHI) - 
-                            self.logf_ion['h1'](lognH,logNHI) + 
-                            logZfrac(logZ,specie) + logNHI)[0][0]
+                    if logNHI <= 14.0:
+                        logNHI_tmp = 14.0
+                    else:
+                        logNHI_tmp = logNHI
+                    logN = (self.logf_ion[ion_name](lognH, logNHI) -
+                            self.logf_ion['h1'](lognH, logNHI) +
+                            logZfrac(logZ, specie) + logNHI)[0][0]
             else:
                 logN = -np.inf
+
         elif self.model == 'photo_thick_aUV':
-            lognH,logZ,aUV,logNHI = alpha
+            lognH, logZ, aUV, logNHI = alpha
             if -4.2 <= lognH < 0 and -3 <= aUV < 2 and 0 < logNHI <= 22:
-                if logNHI <= 14:
-                    # if < 14, use optically thin for all values of NHI < 14.
-                    logN = (self.logf_ion[ion_name]((aUV,lognH,14.0)) -
-                            self.logf_ion['h1']((aUV,lognH,14.0))     +
-                            logZfrac(logZ,specie) + logNHI)
+                if ion_name == 'h1':
+                    logN = logNHI
                 else:
-                    logN = (self.logf_ion[ion_name]((aUV,lognH,logNHI)) - 
-                            self.logf_ion['h1']((aUV,lognH,logNHI)) 
-                            + logZfrac(logZ,specie) + logNHI)
+                    if logNHI <= 14.0:
+                        logNHI_tmp = 14.0
+                    else:
+                        logNHI_tmp = logNHI
+                    logN = (self.logf_ion[ion_name]((aUV, lognH, logNHI_tmp)) -
+                            self.logf_ion['h1']((aUV, lognH, logNHI_tmp)) +
+                            logZfrac(logZ, specie) + logNHI)
             else:
                 logN = -np.inf
         return logN
 
 
+def AskForParameters(model):
+    lognH = float(raw_input("lognH = "))
+    logZ = float(raw_input("logZ/Zsun = "))
+
+    if model == 'photo_thick_aUV':
+        aUV = float(raw_input("aUV = "))
+        logNHI = float(raw_input("logNHI = "))
+        alpha = np.array([lognH, logZ, aUV, logNHI])
+    elif model == 'photo_thick':
+        logNHI = float(raw_input("logNHI = "))
+        alpha = np.array([lognH, logZ, logNHI])
+    elif (model == 'photo_collision_thick' or
+          model == 'photo_collision_rahmati' or
+          model == 'photo_collision_thin'):
+        logT = float(raw_input("logT = "))
+        logNHI = float(raw_input("logNHI = "))
+        alpha = np.array([lognH, logZ, logT, logNHI])
+
+    return alpha
+
 if __name__ == '__main__':
 
     import sys
-    from Config import DefineParams
-    config_fname = sys.argv[1]
-    config_params = DefineParams(config_fname)
-    # ion_model = DefineIonizationModel(config_params)
-    # model = 'photo_thick_aUV'
-    # model = 'photo_collision_thin
-    ion_model = DefineIonizationModel(config_params)
+    model = sys.argv[1]
+    model_redshift = float(sys.argv[2])
+    alpha = AskForParameters(model)
+    ion_model = DefineIonizationModel_test(model, model_redshift)
 
-    lognH = -2.45369564
-    logZ = 1.710639
-    aUV = 0.36763653
-    logN = 15.0
-
-    logT = 4.2
-    alpha = np.array([lognH,logZ,aUV,logN])
-    # alpha = np.array([lognH,logZ,logT,logN])
-
-    import time
-    t1 = time.time()
-    print ion_model.model_prediction(alpha,'o1')
-
-    print ion_model.model_prediction(alpha,'fe2')
-    print ion_model.model_prediction(alpha,'c2')
-
-    print ion_model.model_prediction(alpha,'s2')
-    print ion_model.model_prediction(alpha,'s3')
-    print ion_model.model_prediction(alpha,'s4')
-
-    print ion_model.model_prediction(alpha,'n5')
-    print ion_model.model_prediction(alpha,'o6')
-
-    print ion_model.model_prediction(alpha,'ne8')
-    print time.time() - t1
+    ions = ion_lists()
+    for ion in ions:
+        logN = ion_model.model_prediction(alpha, ion)
+        print("ion: %s = %.2f" % (ion, logN))
