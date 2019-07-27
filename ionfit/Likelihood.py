@@ -8,21 +8,21 @@ from IonizationFitting import ion_model
 
 np.seterr(all='ignore') # ignore floating points warnings.
 
-def tophat_prior(model_x, x_left,x_right):
+def tophat_prior(model_x, x_left, x_right):
 	if model_x >= x_left and model_x < x_right:
 		return 0
 	else:
 		return -np.inf
 
 
-def photo_model_lnprior(alpha,config):
+def photo_model_lnprior(alpha, config):
 	lognH,logZ,logNHI= alpha
 
 	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
-				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
-				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
-				  obs_data.log_pdf['h1'](logNHI)) 	
-	return total_prior
+                    tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+                    tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
+                    obs_data.log_pdf['h1'](logNHI))
+    return total_prior
 
 def photo_model_aUV_lnprior(alpha,config):
 	lognH,logZ,aUV,logNHI= alpha

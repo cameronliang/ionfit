@@ -9,14 +9,13 @@ from scipy.interpolate import interp1d
 
 class DefineParams:
 
-
-    def __init__(self,config_fname):
+    def __init__(self, config_fname):
 
         self.config_fname = config_fname
 
         self.priors = []
         # Read and filter empty lines
-        all_lines = filter(None,(line.rstrip() for line in open(config_fname)))
+        all_lines = filter(None, (line.rstrip() for line in open(config_fname)))
 
         # Remove commented lines
         self.lines = []
@@ -26,32 +25,33 @@ class DefineParams:
 
         # Paths and fname strings
         for line in self.lines:
-            line = filter(None,line.split(' '))
+            line = filter(None, line.split(' '))
             if 'input' in line:
                 self.input_path = line[1]
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
             elif 'mcmc_params' in line or 'mcmc' in line:
                 self.nwalkers = int(line[1])
-                self.nsteps   = int(line[2])
+                self.nsteps = int(line[2])
                 self.nthreads = int(line[3])
-                # Default  
-                self.mcmc_sampler    = 'kombine'
+                # Default
+                self.mcmc_sampler = 'kombine'
 
             elif 'ions' in line:
-                self.ion_names = line[1:] # list of ion names
-                self.nconstraints = len(self.ion_names) # includes HI
+                self.ion_names = line[1:]  # list of ion names
+                self.nconstraints = len(self.ion_names)  # includes HI
                 self.n_metal_ions = len(self.ion_names)-1
                 self.log_pdf = {}
                 for ion_name in self.ion_names:
-                    #full_path_to_pdf = self.input_path+'/pdf_logN_1_'+ion_name+ '.dat'
-                    full_path_to_pdf = self.input_path+'/logN_'+ion_name+ '.dat'
-                    logN, log_pdf = np.loadtxt(full_path_to_pdf,unpack=True)
-                    f = interp1d(logN,log_pdf,kind='linear',bounds_error= False,fill_value=-np.inf)
+                    # full_path_to_pdf = self.input_path+'/pdf_logN_1_'+ ion_name + '.dat'
+                    full_path_to_pdf = self.input_path+'/logN_'+ ion_name + '.dat'
+                    logN, log_pdf = np.loadtxt(full_path_to_pdf, unpack=True)
+                    f = interp1d(logN, log_pdf, kind='linear',
+                                 bounds_error=False, fill_value=-np.inf)
                     self.log_pdf[ion_name] = f
             elif 'model' in line:
                 self.model = line[1]
-                self.model_redshift   = float(line[2])
+                self.model_redshift = float(line[2])
                 
                 self.nparams = 4
                 if self.model == 'photo_fixed_logT_thin' or self.model == 'photo_thick':
@@ -72,18 +72,17 @@ class DefineParams:
             #    self.priors.append([float(line[1]),float(line[2])])
 
             elif 'logNHI' in line:
-                self.min_logNHI,self.max_logNHI = float(line[1]),float(line[2])
+                self.min_logNHI, self.max_logNHI = float(line[1]),float(line[2])
                 self.priors.append([float(line[1]),float(line[2])])
 
-
-        self.mcmc_outputpath   = self.input_path + '/ionization_fit'
+        self.mcmc_outputpath = self.input_path + '/ionization_fit'
         if not os.path.isdir(self.mcmc_outputpath):
-		    os.mkdir(self.mcmc_outputpath)
+            os.mkdir(self.mcmc_outputpath)
         self.chain_fname = self.mcmc_outputpath + '/' + self.chain_short_fname
         self.priors = np.array(self.priors)
 
     def print_config_params(self):
-        print('Ionization model = %s'   % self.model)
+        print('Ionization model = %s' % self.model)
         print('Number Params    = %s' % self.nparams)
         print('Model redshift   = %.5f\n' % self.model_redshift)
         print('Input Path       = %s' % self.input_path)
