@@ -271,6 +271,7 @@ class DefineIonizationModel:
 
 ####################################
 
+
 class DefineIonizationModel_test:
     """
     A Ionization model class
@@ -404,7 +405,14 @@ def AskForParameters(model):
         logT = float(raw_input("logT = "))
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, logT, logNHI])
-
+    else:
+        print("Your model does not exist.Did you have a typo?")
+        print("photo_collision_thin")
+        print("photo_collision_thick")
+        print("photo_collision_rahmati")
+        print("photo_thick")
+        print("photo_thick_aUV")
+        exit()
     return alpha
 
 if __name__ == '__main__':
@@ -418,4 +426,4 @@ if __name__ == '__main__':
     ions = ion_lists()
     for ion in ions:
         logN = ion_model.model_prediction(alpha, ion)
-        print("ion: %s = %.2f" % (ion, logN))
+        print("LogN: %s = %.2f" % (ion, logN))
