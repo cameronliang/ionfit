@@ -8,43 +8,43 @@ from Model import DefineIonizationModel
 np.seterr(all='ignore') # ignore floating points warnings.
 
 def tophat_prior(model_x, x_left,x_right):
-	if model_x >= x_left and model_x < x_right:
-		return 0
-	else:
-		return -np.inf
+    if model_x >= x_left and model_x < x_right:
+        return 0
+    else:
+        return -np.inf
 
 
 def photo_model_lnprior(alpha,config):
-	lognH,logZ,logNHI= alpha
+    lognH,logZ,logNHI= alpha
 
-	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
-				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
-				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
-				  config.log_pdf['h1'](logNHI)) 	
-	return total_prior
+    total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
+                  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+                  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
+                  config.log_pdf['h1'](logNHI)) 	
+    return total_prior
 
 
 def photo_model_aUV_lnprior(alpha,config):
-	lognH,logZ,aUV,logNHI= alpha
+    lognH,logZ,aUV,logNHI= alpha
 
-	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
-				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+    total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
+                  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
                   tophat_prior(aUV,config.min_aUV,  config.max_aUV)      +
-				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
-				  config.log_pdf['h1'](logNHI)) 	
-	return total_prior
+                  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI) + 
+                  config.log_pdf['h1'](logNHI)) 	
+    return total_prior
 
 
 def photo_collision_model_lnprior(alpha,config):
-	lognH,logZ,logT,logNHI = alpha
+    lognH,logZ,logT,logNHI = alpha
 
-	total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
-				  tophat_prior(logT,config.min_logT,  config.max_logT)      +
-				  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
+    total_prior = (tophat_prior(lognH,config.min_lognH,config.max_lognH)    +
+                  tophat_prior(logT,config.min_logT,  config.max_logT)      +
+                  tophat_prior(logZ,config.min_logZ,  config.max_logZ)      +
                   config.log_pdf['h1'](logNHI) + 
-				  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI))
+                  tophat_prior(logNHI,config.min_logNHI, config.max_logNHI))
 
-	return total_prior
+    return total_prior
 
 
 def lnlike(alpha):

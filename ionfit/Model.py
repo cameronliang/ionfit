@@ -120,16 +120,16 @@ def GenericModelInterp(gal_z, ion_name, model_choice):
         clognH = np.linspace(-4.4, 0., 12)
         path = input_path + '/' + model_choice + '/grids/CombinedGrid/cubes/'
 
-    ion = np.load(path + ion_name + '.npy')  # 4D array
-    f_4D = RegularGridInterpolator((credshift, caUV, clognH, clogNHI), ion)
+        ion = np.load(path + ion_name + '.npy')  # 4D array
+        f_4D = RegularGridInterpolator((credshift, caUV, clognH, clogNHI), ion)
 
-    new_ion = np.zeros(( len(caUV), len(clognH), len(clogNHI) ))
-    for i in range(len(caUV)):
-        for j in range(len(clognH)):
-            for k in range(len(clogNHI)):
-                new_ion[i][j][k] = f_4D((gal_z, caUV[i], clognH[j], clogNHI[k]))
+        new_ion = np.zeros(( len(caUV), len(clognH), len(clogNHI) ))
+        for i in range(len(caUV)):
+            for j in range(len(clognH)):
+                for k in range(len(clogNHI)):
+                    new_ion[i][j][k] = f_4D((gal_z, caUV[i], clognH[j], clogNHI[k]))
 
-    f = RegularGridInterpolator((caUV, clognH, clogNHI), new_ion)
+        f = RegularGridInterpolator((caUV, clognH, clogNHI), new_ion)
 
     return f
 
