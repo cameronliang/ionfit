@@ -5,6 +5,7 @@ import numpy as np
 import sys
 import os
 from scipy.interpolate import interp1d
+from Utilities import printline
 
 
 class DefineParams:
@@ -28,6 +29,8 @@ class DefineParams:
             line = filter(None, line.split(' '))
             if 'input' in line:
                 self.input_path = line[1]
+            elif 'burnin' in line:
+                self.burnin = int(line[1])
             elif 'output' in line or 'chain' in line:
                 self.chain_short_fname = line[1]
             elif 'mcmc_params' in line or 'mcmc' in line:
@@ -44,7 +47,7 @@ class DefineParams:
                 self.log_pdf = {}
                 for ion_name in self.ion_names:
                     # full_path_to_pdf = self.input_path+'/pdf_logN_1_'+ ion_name + '.dat'
-                    full_path_to_pdf = self.input_path+'/logN_'+ ion_name + '.dat'
+                    full_path_to_pdf = self.input_path+'/logN_' + ion_name + '.dat'
                     logN, log_pdf = np.loadtxt(full_path_to_pdf, unpack=True)
                     f = interp1d(logN, log_pdf, kind='linear',
                                  bounds_error=False, fill_value=-np.inf)
@@ -82,13 +85,17 @@ class DefineParams:
         self.priors = np.array(self.priors)
 
     def print_config_params(self):
+        printline()
         print('Ionization model = %s' % self.model)
         print('Number Params    = %s' % self.nparams)
-        print('Model redshift   = %.5f\n' % self.model_redshift)
+        print('Model redshift   = %.5f' % self.model_redshift)
         print('Input Path       = %s' % self.input_path)
         print('Chain name       = %s' % self.chain_short_fname)
         print 'Ions included    =', self.ion_names
+        print("burn in samples  = %i, %.0f percents of total steps" %
+              (self.burnin, 100 * self.burnin/float(self.nsteps)))
 
+        printline()
 
 if __name__ == '__main__':
 

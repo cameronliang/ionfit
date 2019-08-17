@@ -397,7 +397,7 @@ def AskForParameters(model):
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, logT, logNHI])
     else:
-        print("Your model does not exist.Did you have a typo?")
+        print("Your model does not exist. Did you have a typo?")
         print("photo_collision_thin")
         print("photo_collision_thick")
         print("photo_collision_rahmati")
