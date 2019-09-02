@@ -88,6 +88,15 @@ def GenericModelInterp(gal_z, ion_name, model_choice):
         ion = np.load(path + ion_name + '.npy')
         f = RegularGridInterpolator((clognH, clogT, cgamma_ratios), ion)
 
+    elif model_choice == 'jv_model':
+        path = input_path + '/' + model_choice + '/combined_grid/cubes/'
+        amp_a = np.load(path+'a.npy')
+        amp_b = np.load(path+'b.npy')
+        clognH = np.load(path+'logn.npy')
+        clogNHI = np.load(path+'logNHI.npy') 
+        ion = np.load(path + ion_name + '.npy')
+        f = RegularGridInterpolator((amp_a, amp_b, clognH, clogNHI), ion)
+
     elif model_choice == 'photo_collision_thick':
         clognH = np.arange(-6, 0.2, 0.2)
         clogNHI = np.arange(15, 19.2, 0.2)
@@ -229,6 +238,21 @@ class DefineIonizationModel:
                 else:
                     logN = -np.inf
 
+            elif self.config_params.model == 'jv_model':
+                amp_a, amp_b, lognH, logZ, logNHI = alpha
+                # ranges to protect out of range in interpolated function
+                if (-6. < lognH <= 0. and 10. < logNHI <= 19. and -0.5 <=
+                   amp_a < 1 and -0.5 <= amp_b < 1):
+                    if logNHI <= 10:
+                        ifrac_alpha = np.array([amp_a, amp_b, lognH, 10.0])
+                    else:
+                        ifrac_alpha = np.array([amp_a, amp_b, lognH, logNHI])
+                    logN = (self.logf_ion[ion_name](ifrac_alpha) -
+                            self.logf_ion['h1'](ifrac_alpha) +
+                            logZfrac(logZ, specie) + logNHI)[0]
+                else:
+                    logN = -np.inf
+
             elif self.config_params.model == 'photo_fix_logT_thin':
                 lognH, logZ, logNHI = alpha
                 logT = 4.0  # one can fix this to whatever tempature
@@ -340,6 +364,21 @@ class DefineIonizationModel_test:
                 else:
                     logN = -np.inf
 
+            elif self.model == 'jv_model':
+                amp_a, amp_b, lognH, logZ, logNHI = alpha
+                # ranges to protect out of range in interpolated function
+                if (-6. < lognH <= 0. and 10. < logNHI <= 19. and -0.5 <=
+                   amp_a < 1 and -0.5 <= amp_b < 1):
+                    if logNHI <= 10:
+                        ifrac_alpha = np.array([amp_a, amp_b, lognH, 10.0])
+                    else:
+                        ifrac_alpha = np.array([amp_a, amp_b, lognH, logNHI])
+                    logN = (self.logf_ion[ion_name](ifrac_alpha) -
+                            self.logf_ion['h1'](ifrac_alpha) +
+                            logZfrac(logZ, specie) + logNHI)[0]
+                else:
+                    logN = -np.inf
+
             elif self.model == 'photo_fix_logT_thin':
                 lognH, logZ, logNHI = alpha
                 logT = 4.0  # one can fix this to whatever tempature
@@ -387,9 +426,17 @@ def AskForParameters(model):
         aUV = float(raw_input("aUV = "))
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, aUV, logNHI])
+    
     elif model == 'photo_thick':
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, logNHI])
+    
+    elif model == 'jv_model':
+        logNHI = float(raw_input("logNHI = "))
+        amp_a = float(raw_input("a = "))
+        amp_b = float(raw_input("b = "))
+        alpha = np.array([amp_a, amp_b, lognH, logZ, logNHI])
+
     elif (model == 'photo_collision_thick' or
           model == 'photo_collision_rahmati' or
           model == 'photo_collision_thin'):
@@ -410,7 +457,10 @@ if __name__ == '__main__':
 
     import sys
     model = sys.argv[1]
-    model_redshift = float(sys.argv[2])
+    if model == 'jv_model':
+        model_redshift = 0.0
+    else:
+        model_redshift = float(sys.argv[2])
     alpha = AskForParameters(model)
     ion_model = DefineIonizationModel_test(model, model_redshift)
 

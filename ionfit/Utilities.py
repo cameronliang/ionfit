@@ -10,7 +10,7 @@ def model_labels(model):
     if model == 'photo_collision_thin' or model == 'photo_collision_thick':
         labels = [r'$\log n_{\rm H}$', r'$\log Z/Z_{\odot}$',
                   r'$\log T [\rm{K}]$', r'$\log N_{\rm HI}$']
-    elif model = 'photo_thick':
+    elif model == 'photo_thick':
         labels = [r'$\log n_{\rm H}$', r'$\log Z/Z_{\odot}$',
                   r'$\log N_{\rm HI}$']
     elif model == 'photo_thick_aUV':
