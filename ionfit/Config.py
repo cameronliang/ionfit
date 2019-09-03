@@ -46,8 +46,9 @@ class DefineParams:
                 self.n_metal_ions = len(self.ion_names)-1
                 self.log_pdf = {}
                 for ion_name in self.ion_names:
-                    # full_path_to_pdf = self.input_path+'/pdf_logN_1_'+ ion_name + '.dat'
-                    full_path_to_pdf = self.input_path+'/logN_' + ion_name + '.dat'
+                    full_path_to_pdf = self.input_path+'/pdf_logN_1_' +\
+                                       ion_name + '.dat'
+                    #full_path_to_pdf = self.input_path+'/logN_' + ion_name + '.dat'
                     logN, log_pdf = np.loadtxt(full_path_to_pdf, unpack=True)
                     f = interp1d(logN, log_pdf, kind='linear',
                                  bounds_error=False, fill_value=-np.inf)
@@ -55,20 +56,28 @@ class DefineParams:
             elif 'model' in line:
                 self.model = line[1]
                 self.model_redshift = float(line[2])
-                
+
                 self.nparams = 4
                 if self.model == 'photo_fixed_logT_thin' or self.model == 'photo_thick':
                     self.nparams = 3
-
+                elif self.model == 'jv_model':
+                    self.nparams = 5
             elif 'lognH' in line:
-                self.min_lognH,self.max_lognH  = float(line[1]),float(line[2])
-                self.priors.append([float(line[1]),float(line[2])])
+                self.min_lognH, self.max_lognH = float(line[1]), float(line[2])
+                self.priors.append([float(line[1]), float(line[2])])
             elif 'logZ' in line:
-                self.min_logZ,self.max_logZ    = float(line[1]),float(line[2])
-                self.priors.append([float(line[1]),float(line[2])])
+                self.min_logZ, self.max_logZ = float(line[1]), float(line[2])
+                self.priors.append([float(line[1]), float(line[2])])
             elif 'logT' in line:
-                self.min_logT,self.max_logT    = float(line[1]),float(line[2])
-                self.priors.append([float(line[1]),float(line[2])])
+                self.min_logT, self.max_logT = float(line[1]), float(line[2])
+                self.priors.append([float(line[1]), float(line[2])])
+
+            elif 'amp_a' in line:
+                self.min_amp_a, self.max_amp_a = float(line[1]), float(line[2])
+                self.priors.append([self.min_amp_a, self.max_amp_a])
+            elif 'amp_b' in line:
+                self.min_amp_b, self.max_amp_b = float(line[1]), float(line[2])
+                self.priors.append([self.min_amp_b, self.max_amp_b])
 
             #elif 'aUV' in line:
             #    self.min_aUV,self.max_aUV    = float(line[1]),float(line[2])

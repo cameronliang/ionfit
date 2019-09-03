@@ -16,7 +16,10 @@ def model_labels(model):
     elif model == 'photo_thick_aUV':
         labels = [r'$\log n_{\rm H}$', r'$\log Z/Z_{\odot}$',
                   r'\alpha_{\rm UV}', r'$\log N_{\rm HI}$']
-
+    elif model == 'jv_model':
+        labels = [r'$a_{\rm Amp}$', r'$b_{\rm Amp}$',
+                  r'$\log n_{\rm H}$', r'$\log Z/Z_{\odot}$',
+                  r'$\log N_{\rm HI}$']
     return labels
 
 

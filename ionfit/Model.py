@@ -92,9 +92,10 @@ def GenericModelInterp(gal_z, ion_name, model_choice):
         path = input_path + '/' + model_choice + '/combined_grid/cubes/'
         amp_a = np.load(path+'a.npy')
         amp_b = np.load(path+'b.npy')
-        clognH = np.load(path+'logn.npy')
-        clogNHI = np.load(path+'logNHI.npy') 
+        clognH = np.load(path+'lognH.npy')
+        clogNHI = np.load(path+'logNHI.npy')
         ion = np.load(path + ion_name + '.npy')
+
         f = RegularGridInterpolator((amp_a, amp_b, clognH, clogNHI), ion)
 
     elif model_choice == 'photo_collision_thick':
@@ -426,11 +427,11 @@ def AskForParameters(model):
         aUV = float(raw_input("aUV = "))
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, aUV, logNHI])
-    
+
     elif model == 'photo_thick':
         logNHI = float(raw_input("logNHI = "))
         alpha = np.array([lognH, logZ, logNHI])
-    
+
     elif model == 'jv_model':
         logNHI = float(raw_input("logNHI = "))
         amp_a = float(raw_input("a = "))
