@@ -241,17 +241,20 @@ class DefineIonizationModel:
 
             elif self.config_params.model == 'jv_model':
                 amp_a, amp_b, lognH, logZ, logNHI = alpha
+                print 'enter'
                 # ranges to protect out of range in interpolated function
-                if (-6. < lognH <= 0. and 10. < logNHI <= 19. and -0.5 <=
-                   amp_a < 1 and -0.5 <= amp_b < 1):
+                if (-5.0 < lognH <= 0. and 10. < logNHI <= 19. and -1 <
+                   amp_a <= 4 and -1 < amp_b <= 1):
                     if logNHI <= 10:
                         ifrac_alpha = np.array([amp_a, amp_b, lognH, 10.0])
                     else:
+                        print 'here???'
                         ifrac_alpha = np.array([amp_a, amp_b, lognH, logNHI])
                     logN = (self.logf_ion[ion_name](ifrac_alpha) -
                             self.logf_ion['h1'](ifrac_alpha) +
                             logZfrac(logZ, specie) + logNHI)[0]
                 else:
+                    print 'here!!'
                     logN = -np.inf
 
             elif self.config_params.model == 'photo_fix_logT_thin':
@@ -368,8 +371,8 @@ class DefineIonizationModel_test:
             elif self.model == 'jv_model':
                 amp_a, amp_b, lognH, logZ, logNHI = alpha
                 # ranges to protect out of range in interpolated function
-                if (-6. < lognH <= 0. and 10. < logNHI <= 19. and -0.5 <=
-                   amp_a < 1 and -0.5 <= amp_b < 1):
+                if (-6. < lognH <= 0. and 10. < logNHI <= 19. and -1 <
+                   amp_a <= 4 and -1 <= amp_b < 4):
                     if logNHI <= 10:
                         ifrac_alpha = np.array([amp_a, amp_b, lognH, 10.0])
                     else:
